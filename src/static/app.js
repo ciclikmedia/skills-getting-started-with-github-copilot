@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
         const participantsList = details.participants.length > 0 
-          ? details.participants.map(p => `<li>${p}</li>`).join('')
+          ? details.participants.map(p => `<li>${p} <button class="delete-btn" data-email="${p}" data-activity="${name}">×</button></li>`).join('')
           : '<li><em>No hay participantes aún</em></li>';
 
         activityCard.innerHTML = `
@@ -43,6 +43,27 @@ document.addEventListener("DOMContentLoaded", () => {
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
+      });
+
+      // Add event listeners for delete buttons
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const email = e.target.dataset.email;
+          const activity = e.target.dataset.activity;
+          try {
+            const response = await fetch(`/activities/${encodeURIComponent(activity)}/cancel?email=${encodeURIComponent(email)}`, {
+              method: 'DELETE'
+            });
+            if (response.ok) {
+              // Reload activities
+              fetchActivities();
+            } else {
+              alert('Error cancelling signup');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+          }
+        });
       });
     } catch (error) {
       activitiesList.innerHTML = "<p>Failed to load activities. Please try again later.</p>";
@@ -71,6 +92,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Reload activities to show updated participants
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
